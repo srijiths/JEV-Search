@@ -242,68 +242,6 @@ build*, with the process alive and idle. Nothing times it out and there is no er
 search for. If a build produces no output for more than a minute or two, kill it,
 `rm -rf .next`, and run it again — a clean build of this project takes about 20 seconds.
 
-### If the dev server hangs on "Starting…" forever
-
-```
-   ▲ Next.js 15.5.26
-   - Local:        http://localhost:3000
- ✓ Starting...
-```
-
-…and then nothing, for as long as you are willing to wait. The port is open and accepts
-connections, but no request ever returns and `✓ Ready` never prints. There is no error,
-which is what makes this one expensive to diagnose.
-
-On Windows this is OneDrive, and the fix is to pause syncing before starting the dev
-server — tray icon → **Pause syncing**. Measured on this project, same code and the same
-`node_modules`, the only difference being the path:
-
-| | `Starting` → `Ready` |
-| --- | --- |
-| outside the synced tree | **2 seconds** |
-| inside it | **never** (abandoned at 3 minutes) |
-
-**Pausing does not rescue a server that has already hung.** Read the word *before* in that
-paragraph literally: a wedged `next dev` never recovers, whatever OneDrive does afterwards, and
-it goes on holding port 3000 and `.next/trace` while it sits there — so the terminal you are
-watching will stay on `Starting…` forever, and a second `npm run dev` gets refused by the guard
-above rather than starting cleanly. Pause syncing, then kill the old stack and clear its state:
-
-```bash
-netstat -ano | grep LISTENING | grep :3000   # the pid holding the port
-taskkill //PID <pid> //T //F                 # //T — the tree, not just the listener
-rm -f .dev.pid && rm -rf .next               # the lockfile and the stale webpack cache
-npm run dev
-```
-
-Before assuming OneDrive is the cause a second time, measure it — the penalty is not subtle
-when it is real. A few hundred small writes inside the project tree against the same loop in
-`$TMPDIR` separates "the filter driver is in the way" from "a process is simply stuck", and the
-two have completely different fixes:
-
-```bash
-time (mkdir -p fsbench && for i in $(seq 1 400); do echo x > fsbench/f$i.tmp; done); rm -rf fsbench
-```
-
-Two things worth knowing, because both are easy to guess wrong:
-
-It is **not** Files On-Demand fetching anything. Every file is already local — zero
-dehydrated placeholders — so nothing is downloading. The cost is OneDrive's filter driver
-sitting in front of *every* filesystem operation, on a workload that does tens of thousands
-of tiny ones. A hung server sits at about 6% of one core with no outbound sockets: blocked
-on I/O over and over, neither computing nor waiting on the network.
-
-And it is **dev-specific**, which is why `next build` is unaffected and finishes in about 20
-seconds. A build makes one bounded pass and exits. `next dev` registers recursive watchers
-over the project and keeps a webpack cache in `.next/cache`, so webpack's writes make
-OneDrive sync, and OneDrive's own writes fire the watchers again. Pausing sync breaks that
-loop; nothing else about the setup needs to change.
-
-If you would rather not remember this every session, the durable fix is to keep the churn
-out of the synced tree — move `.next` and `node_modules` to a path outside OneDrive and
-leave NTFS junctions behind, which OneDrive will not traverse. `npm run dev` prints a
-one-line reminder when it notices the project is inside a synced folder.
-
 ### Model
 
 Classification is pinned to `typesafe/jev-1.13`. Override with `JEV_MODEL` if you want a
