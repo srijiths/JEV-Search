@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+/*
+ * Tailwind v4 config lives in CSS, not a JS file.
+ *
+ * The palette is semantic — `bg-surface`, `text-ink-muted`, `border-line` — rather than
+ * `bg-neutral-950` / `text-neutral-100`. That is not decoration: the previous version
+ * spelled the *polarity* into every class name, so 950 meant "background" and 100 meant
+ * "text", and inverting the theme meant editing ~200 class names across ten files and
+ * hoping none were missed. Naming the role instead of the shade puts the light/dark
+ * decision in this block and nowhere else.
+ *
+ * Literal hex rather than `var(--color-neutral-200)` on purpose: Tailwind v4 only emits
+ * theme variables that some utility actually references, so a token defined in terms of
+ * an otherwise-unused default would resolve to nothing at runtime.
+ */
+@theme {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* ── Surfaces, back to front ── */
+  --color-canvas: #ffffff;
+  --color-surface: #ffffff;
+  /* Code blocks and subtle fills. Needs to read as "inset" against `surface`. */
+  --color-raised: #fafafa;
+  /* Unfilled portion of a progress bar — darker than `raised`, or the bar is invisible. */
+  --color-track: #e5e5e5;
+
+  /* ── Hairlines ── */
+  --color-line: #e5e5e5;
+  --color-line-strong: #d4d4d4;
+
+  /* ── Text, darkest to lightest ── */
+  --color-ink: #171717;
+  --color-ink-soft: #404040;
+  --color-ink-mid: #525252;
+  --color-ink-muted: #737373;
+  --color-ink-faint: #a3a3a3;
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * The card morph animates height and position. Honour a stated preference for less
+ * motion — the whole point of the layout animation is legibility, and for someone who
+ * gets motion sick it does the opposite.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,32 @@
+node_modules/
+.next/
+out/
+build/
+
+# Written by `npm run dev` while the server runs, so a second one can refuse to start.
+.dev.pid
+
+# Secrets. `.env.example` is committed; every real env file is not.
+.env
+.env.local
+.env*.local
+
+npm-debug.log*
+yarn-error.log*
+
+# Captured tool output — `npm run build > build.log`, and anything similar while
+# debugging. Transient, machine-specific, and of no use to a reader of the repo.
+*.log
+*.tsbuildinfo
+next-env.d.ts
+
+# The demo master, straight off the recorder at 63 MB. What ships is the 10 MB re-encode at
+# `demo/jev_search_demo.mp4` — same resolution, silent audio track dropped. The master stays
+# on disk and out of git so a future re-encode starts from it rather than compressing an
+# already-compressed copy a second time.
+demo/*.original.mp4
+
+.DS_Store
+.vscode/
+.idea/
+coverage/
